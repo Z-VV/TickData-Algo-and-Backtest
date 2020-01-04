@@ -7,12 +7,17 @@ from playsound import  playsound
 from talib import EMA
 
 def connect():
-
-    token = 'b7ff7cbe3d6735a548ba8f33a37c78d465f847b2'  # demo
+    #Connects
+    
+    token = 'insert token here'  
     con = fxcmpy.fxcmpy(access_token=token, log_level="error")
     print(con.get_accounts())
     return con,token
 
+# Originaly  FIX (Financial Information Exchange) API is designed to work with C++ mostly,beacause of the speed of data streaming
+# and orders(see high frequency trading).
+# C++ code is working simultaneously with this code.To take up yo 200 price changes a second,our code must first copy the C log.file 
+# in order to not interrupt the writing and then read the new file.
 
 def Run(con,token):
     symbol = 'GBP/USD'
@@ -37,6 +42,8 @@ def Run(con,token):
 
             num=len(lines)
             raw=lines[-1].split('270=')
+            
+            # Creating dataframe from the tick data avaliable from the log.file 
             if len(raw)>4:
                 N1 = num - N
                 N = num
@@ -47,17 +54,17 @@ def Run(con,token):
                     dic={'time':timenow,'bid':bid,'tick':N1}
                     data=data.append(dic,ignore_index=True,sort=False)
                     print(data.tail(1))
-
-                    #print(str(timenow)+'     '+str(bid_list[0])+'   '+str(N1))
-            if len(data)>191:
-                two_minute = data.iloc[-190:-10]
+                    
+            # Going throw the dataframe every second and checking for signals as at FuryBacktest.py . 
+            if len(data)>121:
+                two_minute = data.iloc[-120:-10]
                 two_minute=two_minute.reset_index(drop=True)
                 tick_sum = 0
                 for x in range(len(two_minute)):
                     tick_sum += two_minute['tick'][x]
                 maximum = two_minute['bid'].max()
                 minimum = two_minute['bid'].min()
-                average_tick_for_one_second = tick_sum / 180
+                average_tick_for_one_second = tick_sum / 120
                 average_ticks_for_ten_seconds = average_tick_for_one_second * 10
                 actual_ten_seconds_sum = 0
                 for x in range((len(data)-10),len(data)):
@@ -71,9 +78,6 @@ def Run(con,token):
                 print('----------------------------')
 
                 if (actual_ten_seconds_sum - average_ticks_for_ten_seconds) > average_ticks_for_ten_seconds*0.8 and do:
-                    #print('downtrend    '+str(downtrend))
-                    #print('uptrend    ' + str(uptrend))
-
                     if (data['bid'][len(data)-1] - maximum) >= (maximum - minimum)*0.8 :
                         print((maximum - minimum) * 10000)
                         opentrade = con.open_trade(symbol=symbol, is_buy=True, amount=5,
@@ -95,21 +99,7 @@ def Run(con,token):
             if time1.second==10:
                 connected=con.is_connected()
                 print(connected)
-                #data_m1=con.get_candles('GBP/USD',period='m1',number=500)
-                #ema50 = EMA(data_m1['bidclose'], timeperiod=50)
-                #ema200 = EMA(data_m1['bidclose'], timeperiod=200)
-                #for x in range(-5,-1):
-                #    if (data_m1['bidclose'][x]>ema50[x] and ema200[x]>ema50[x]) or ema200[x]<ema50[x]:
-                #        downtrend=False
-                #        break
-                #    else:
-                #        downtrend=True
-                #for x in range(-5,-1):
-                #    if (data_m1['bidclose'][x]<ema50[x] and ema200[x]<ema50[x]) or ema200[x]>ema50[x]:
-                #        uptrend=False
-                #        break
-                #    else:
-                #        uptrend=True
+
                 if connected==False:
                     con = fxcmpy.fxcmpy(access_token=token, log_level="error")
                 print('DO :'+str(do))
