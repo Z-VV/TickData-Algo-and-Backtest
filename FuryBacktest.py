@@ -4,14 +4,17 @@ import sys
 from datetime import timedelta
 import datetime as dt
 from pandas.plotting import register_matplotlib_converters
-from playsound import playsound
 import time
 import warnings
 warnings.filterwarnings('ignore')
 register_matplotlib_converters()
 pd.set_option('max_rows',None)
 
+
 def data_down(symbol):
+    
+    #This function dowloads the tick data from fxcm.
+    
     start = dt.datetime(2019, 8, 5)
     stop = dt.datetime(2019, 8, 9)
     td = fxcmpy.fxcmpy_tick_data_reader(symbol, start, stop)
@@ -26,8 +29,9 @@ def data_down(symbol):
     return frame
 
 def data_fill_sec(new):
-#new=pd.read_pickle('EUR_USD_07_18.pkl')
-
+    
+    #Counting the number of ticks for one second and adding it to the 'tick' column. 
+    
     new['tick']=0
     new['buy']=0
     new['sell']=0
@@ -48,9 +52,11 @@ def data_fill_sec(new):
 
     df = slice[(slice[['tick']] != 0).all(axis=1)]
     df=df.reset_index(drop=False)
-
     print('into')
     total=len(df)
+    
+    #Inserting rows for each second missing in the data,because of no  changes in the price.
+    
     x=0
     while x<=total-1:
         diff=df.iloc[x, 0].second - df.iloc[x - 1, 0].second
@@ -72,11 +78,13 @@ def data_fill_sec(new):
     df.set_index("index", inplace=True)
     print(df.head(10))
     df.to_pickle('gbp01.pkl')
-
     return df
 
-
 def algo(df):
+    
+    #Checking the clean and ready data  for BUY and SELL signals via trading algorithm.
+    #Marks the point of entry at the BUY and SELL columns with 1.
+    
     print('checking....')
     for x in range(60,len(df)):
         two_minute=df.iloc[x-120:x-10]
@@ -103,13 +111,13 @@ def algo(df):
                 df.at[a,'sell']=1
                 print(str(df.index[x])+'   --SELL--')
                 print('------')
-    df.to_pickle('GBPUSD_2019.pkl')
 
     return df
 
-    #df.to_pickle('backtest07_EUR_USD.pkl')
-
 def clean_signal(data):
+    
+    #Going throw the data again,taking the first signal only and deleting the next 100 second if the sagnal appears again.
+    
     x = 1
     while x <= len(data) - 1:
         if data['buy'][x] == 1:
@@ -139,11 +147,11 @@ def clean_signal(data):
     return data
 
 def backtest(data):
-    data = pd.read_pickle('GBPUSD_2019.pkl')
+    
+    #Counting the number of wins and loses and cheking if the algorithm is profitable.
+    
     print(data.tail(20))
-
     print('ok')
-
     dictionary = {}
     tp_list = [5,6,7]
     sl_list = [-3,-4]
@@ -219,16 +227,8 @@ def full_test():
     backtest(data=data3)
     time2=dt.datetime.now()
     print(time2-time1)
-    playsound('warp.mp3')
     time.sleep(5)
 
-def check_algo_only():
-    data1 = pd.read_pickle('gbp01.pkl')
-    print(len(data1))
-    data2 = algo(data1)
-    data3 = clean_signal(data2)
-    print('step 4')
-    backtest(data=data3)
 
 full_test()
 
