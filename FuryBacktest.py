@@ -77,7 +77,7 @@ def data_fill_sec(new):
     print(df.head(10))
     df.set_index("index", inplace=True)
     print(df.head(10))
-    df.to_pickle('gbp01.pkl')
+    #df.to_pickle('gbp01.pkl')
     return df
 
 def algo(df):
