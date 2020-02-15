@@ -56,15 +56,21 @@ def data_fill_sec(new):
     total=len(df)
     
     #Inserting rows for each second missing in the data,because of no  changes in the price.
-    
+
     x=0
     while x<=total-1:
         diff=df.iloc[x, 0].second - df.iloc[x - 1, 0].second
-        if diff>1:
+
+        if diff>1 or diff<0:
             bid=df.iloc[x-1,1]
             ask=df.iloc[x-1,2]
             df1 = df[0:x]
             df2 = df[x::]
+            if diff<0:
+                left_to_60 = 60-df.iloc[x - 1, 0].second
+                fill = df.iloc[x, 0].second
+                diff = left_to_60 + fill
+                #print(diff)
             for z in range(diff-1):
                 new = df.iloc[x-1, 0] + timedelta(seconds=z+1)
                 new_row = [new, bid, ask, 0, 0, 0]
@@ -72,7 +78,7 @@ def data_fill_sec(new):
             total+=(diff-1)
             df= pd.concat([df1, df2])
         x+=1
-
+        
     df=df.reset_index(drop=True)
     print(df.head(10))
     df.set_index("index", inplace=True)
