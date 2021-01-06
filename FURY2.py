@@ -9,7 +9,6 @@ from socketIO_client import SocketIO
 
 def connect():
 
-    token ='786733bea669469874c5b4f45be1e1766ac9066b' # 'b7ff7cbe3d6735a548ba8f33a37c78d465f847b2'  # demo
     con = fxcmpy.fxcmpy(access_token=token, log_level="error",server='real')
     print(con.get_accounts())
     return con,token
